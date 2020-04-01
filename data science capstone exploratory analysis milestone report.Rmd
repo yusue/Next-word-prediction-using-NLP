@@ -1,0 +1,127 @@
+---
+title: "Exploratory Analysis Milestone Report week2"
+author: "yusue"
+date: "3/19/2020"
+output: html_document
+---
+#Introduction
+
+This is the milestone report for the Exploratory Analysis section of the Coursera Data Science Capstone project. The goal of the capstone project is to build an application based on a predictive text model. The user will provide a word or a phrase and the application will try to predict the next word. The model will be trained using a corpus (a collection of English text) that is compiled from 3 sources - news, blogs, and tweets.
+
+In the following report, I first did an overview statistics for the data.
+Second, I created a sample for each of the file to reduce run time and then merge 3 samples as the training dataset.
+Third, I created a corpus and do necessary cleaning with quanteda package.
+Forth, I tokenized ngrams using the functions in quanteda package.
+Last, I did exploratory analysis using ggplot2 package to visualize the results.
+
+## Load data and packages
+1. load the required libraries and set up the work environment.
+```{r}
+library(tm)
+library(NLP)
+library(stringi)
+library(tokenizers)
+library(quanteda)
+library(ggplot2)
+```
+2. Read text files
+```{r}
+setwd("/Users/yusue/Downloads/final/en_US")
+twitter <-readLines("en_US.twitter.txt", encoding = "UTF-8",skipNul = TRUE)
+news <- readLines("en_US.news.txt", encoding = 'UTF-8',skipNul = TRUE)
+blogs <- readLines("en_US.blogs.txt", encoding = 'UTF-8', skipNul = TRUE)
+```
+## Overview of the data
+To get a sense of what the data looks like, I summerized the main information from each of the 3 datasets (Blog, News and Twitter). I checked lines, file size, words counts in each file.
+```{r}
+ overview = data.frame(
+   fileName = c("twitter","news","blogs"),
+    fileSize = sapply(list(twitter,news,blogs), function(x){format(object.size(x),"Mb")}),
+    t(rbind(sapply(list(twitter,news,blogs),stri_stats_general),
+    wordcount=sapply(list(twitter,news,blogs),stri_stats_latex)[4,])
+    )
+   )
+overview
+```
+
+As we can see, the size of each file is more than 200Mb, which is very big. To reduce runing time, we have to subset data for sampling. 
+
+##Sampling and combing data 
+```{r}
+set.seed(1234)
+twitter_subset= sample(twitter,length(twitter)*0.05)
+news_subset=sample(news,length(news)*0.05)
+blogs_subset=sample(blogs,length(blogs)*0.05)
+
+dataset=c(twitter_subset,news_subset,blogs_subset)
+dataset = iconv(dataset,"UTF-8","ASCII", sub = "")
+
+```
+
+## Creating and cleaning corpus using quanteda
+```{r}
+quanteda_corp = corpus(dataset)
+corpus_token<-tokens(quanteda_corp, 
+                     remove_punct = TRUE,
+                     remove_symbols = TRUE,
+                     remove_numbers = TRUE,
+                     remove_url = TRUE)
+corpus_tokens=tokens_remove(corpus_token, stopwords("english"))
+```
+
+##Create ngrams and calculate frequency using quanteda
+
+Now that we have created and cleaned the corpus we will be able to look at the distribution of various n-grams. First, let us do unigrams after creating the tokenization, which followed by a plot for visualization. 
+```{r}
+uni_ngrams = tokens_ngrams(corpus_tokens, n=1)
+dfmat1 = dfm(uni_ngrams)
+uni_freq=textstat_frequency(dfmat1)
+head(uni_freq)
+
+# plot 20 most frequent single words
+ggplot(uni_freq[1:20, ], aes(x = reorder(feature, -frequency), y = frequency)) +
+    geom_bar(stat="identity", fill="red") +
+    ggtitle(" Uni_granms Top 20") +
+    labs(x = "Words", y = "Frequency")
+```
+
+Then we will do the same for the bingrams and tringrams.
+```{r}
+bi_ngrams = tokens_ngrams(corpus_tokens, n=2)
+dfmat2 = dfm(bi_ngrams)
+bi_freq=textstat_frequency(dfmat2)
+head(bi_freq)
+
+ggplot(bi_freq[1:20, ], aes(x = reorder(feature, -frequency), y = frequency)) +
+    geom_bar(stat="identity", fill="red") +
+    ggtitle(" Bi_granms Top 20") +
+    labs(x = "Words", y = "Frequency")+
+    theme(axis.text.x=element_text(angle=90, hjust=1))
+    
+tri_ngrams = tokens_ngrams(corpus_tokens, n=3)
+dfmat3 = dfm(tri_ngrams)
+tri_freq=textstat_frequency(dfmat3)
+head(tri_freq)
+
+ggplot(tri_freq[1:20, ], aes(x = reorder(feature, -frequency), y = frequency)) +
+    geom_bar(stat="identity", fill="red") +
+    ggtitle(" Tri_granms Top 20") +
+    labs(x = "Words", y = "Frequency")+
+    theme(axis.text.x=element_text(angle=90, hjust=1))
+```
+## Wordcloud
+We can also do a wordcloud to see the most common words quickly.
+```{r}
+set.seed(100)
+textplot_wordcloud(dfmat1, min_count =10, min_size=1, max_words = 80,
+color = c('red', 'pink', 'green', 'purple', 'orange', 'blue'))
+textplot_wordcloud(dfmat2, min_count =10, min_size=1, max_words = 80,
+color = c('red', 'pink', 'green', 'purple', 'orange', 'blue'))
+textplot_wordcloud(dfmat3, min_count =10, min_size=0.1, max_words = 100,random.order=FALSE,
+color = c('red', 'pink', 'green', 'purple', 'orange', 'blue'))
+```
+
+## Future plan
+This report is just the initial exploratory analysis. As can be seen from the plots above as n increases for the n-gram the frequency decreases for each of its terms.
+in addition, we can see in the unigram plot, the most frequent used words are:"the, and, but", from those words, we cannot predict the exact meanning in the data. 
+So to build a better predictive algorithm, the next steps will be to build a predictive algorithm that uses an n-gram model with a frequency lookup similar to the analysis above. This algorithm will then be deployed in a Shiny app and will suggest the most likely next word after a phrase is typed.

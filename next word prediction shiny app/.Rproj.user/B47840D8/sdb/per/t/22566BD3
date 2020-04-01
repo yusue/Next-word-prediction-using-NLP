@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "library(shiny)\nlibrary(shinysky)\nlibrary(ggrepel)\nlibrary(ggplot2)\nlibrary(stringr)\n\n# setwd(\"/Users/yusue/Documents/GitHub/data science capstone\")\n\n\nui <- shinyUI(\n    fluidPage(titlePanel(\"Text Input Prediction\"),\n              \n              sidebarLayout(\n                  sidebarPanel(\n                      \n                      tags$b(\"Please type some words in the box below.\"),\n                      textInput(\"textInput01\", label=NULL, \n                                value = \"\", width=NULL,\n                                placeholder=''),\n                      shinyalert(\"shinyalert01\"),\n                      tags$b(\"The most possible input predicted:\"),\n                      verbatimTextOutput(\"verbatimTextOutput01\", placeholder=TRUE),\n                      tableOutput('tableOutput01'),\n                      actionButton(\"actionButton01\", \"Clear Input\")\n                  ),\n                  \n                  mainPanel(\n                      plotOutput(\"barplot01\")\n                  )\n              ) # end of sidebarLayout()\n    ) # end of fluidPage()\n)\n",
+    "created" : 1584804274914.000,
+    "dirty" : false,
+    "encoding" : "ASCII",
+    "folds" : "",
+    "hash" : "1792060735",
+    "id" : "22566BD3",
+    "lastKnownWriteTime" : 1584804298,
+    "last_content_update" : 1584804298189,
+    "path" : "~/git_repo/word_pred_app/ui.R",
+    "project_path" : "ui.R",
+    "properties" : {
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
